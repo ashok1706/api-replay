@@ -27,4 +27,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configurable header and body field masking
 - Safe JSON serialization (handles circular references)
 
-[1.0.0]: https://github.com/ashok1706/api-replay/releases/tag/v1.0.0
+[1.0.0]: https://github.com/ashok1706/api-traffic-replay/releases/tag/v1.0.0

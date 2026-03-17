@@ -46,12 +46,12 @@
   "author": "ashok1706",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ashok1706/api-replay.git"
+    "url": "git+https://github.com/ashok1706/api-traffic-replay.git"
   },
   "bugs": {
-    "url": "https://github.com/ashok1706/api-replay/issues"
+    "url": "https://github.com/ashok1706/api-traffic-replay/issues"
   },
-  "homepage": "https://github.com/ashok1706/api-replay#readme",
+  "homepage": "https://github.com/ashok1706/api-traffic-replay#readme",
   "license": "MIT",
   "engines": {
     "node": ">=18.0.0"

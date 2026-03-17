@@ -103,6 +103,6 @@ This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.
 
 ## Questions?
 
-Open a [Discussion](https://github.com/ashok1706/api-replay/discussions) or reach out via issues.
+Open a [Discussion](https://github.com/ashok1706/api-traffic-replay/discussions) or reach out via issues.
 
 Thank you for contributing!
