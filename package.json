@@ -1,6 +1,6 @@
 {
   "name": "api-traffic-replay",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Record real API traffic, replay it anywhere, and instantly spot what changed",
   "type": "module",
   "exports": {
