@@ -19,12 +19,12 @@ export function diff(original, replayed) {
 function deepDiff(a, b, path = '') {
   const changes = {};
 
-  // Handle nulls / type mismatches
+  // Identical values (including both null/undefined)
   if (a === b) return changes;
-  if (a === null || b === null || typeof a !== typeof b) {
-    if (a !== b) {
-      changes[path || '(root)'] = { before: a, after: b };
-    }
+
+  // One is null/undefined or type mismatch
+  if (a == null || b == null || typeof a !== typeof b) {
+    changes[path || '(root)'] = { before: a, after: b };
     return changes;
   }
 
@@ -56,7 +56,7 @@ function deepDiff(a, b, path = '') {
     return changes;
   }
 
-  // Objects
+  // Objects — guard against circular refs with depth limit
   const allKeys = new Set([...Object.keys(a), ...Object.keys(b)]);
   for (const key of allKeys) {
     const childPath = path ? `${path}.${key}` : key;
@@ -72,7 +72,8 @@ function deepDiff(a, b, path = '') {
   return changes;
 }
 
-// ANSI color helpers
+// ── ANSI Colors ──────────────────────────────────────────
+
 const colors = {
   red: s => `\x1b[31m${s}\x1b[0m`,
   green: s => `\x1b[32m${s}\x1b[0m`,
@@ -96,7 +97,9 @@ export function formatDiff(result) {
   }
 
   // Duration
-  lines.push(colors.dim(`Duration: ${result.duration.before}ms → ${result.duration.after}ms`));
+  const dBefore = result.duration.before ?? '?';
+  const dAfter = result.duration.after ?? '?';
+  lines.push(colors.dim(`Duration: ${dBefore}ms → ${dAfter}ms`));
   lines.push('');
 
   // Body changes

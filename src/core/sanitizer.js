@@ -14,15 +14,29 @@ export function sanitizeHeaders(headers, options = {}) {
 }
 
 export function sanitizeBody(body, options = {}) {
-  if (!body || !options.maskBody?.length) return body;
+  if (!body || typeof body !== 'object' || !options.maskBody?.length) return body;
 
-  const masked = structuredClone(body);
+  const maskSet = new Set(options.maskBody);
+  return deepMask(structuredClone(body), maskSet);
+}
 
-  for (const key of options.maskBody) {
-    if (masked[key] !== undefined) {
-      masked[key] = '***';
+function deepMask(obj, maskSet) {
+  if (obj === null || typeof obj !== 'object') return obj;
+
+  if (Array.isArray(obj)) {
+    for (let i = 0; i < obj.length; i++) {
+      obj[i] = deepMask(obj[i], maskSet);
+    }
+    return obj;
+  }
+
+  for (const key of Object.keys(obj)) {
+    if (maskSet.has(key)) {
+      obj[key] = '***';
+    } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+      obj[key] = deepMask(obj[key], maskSet);
     }
   }
 
-  return masked;
+  return obj;
 }

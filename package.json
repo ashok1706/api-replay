@@ -11,6 +11,12 @@
   },
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
+  "files": [
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
   "bin": {
     "api-replay": "./src/cli/index.js"
   },
@@ -26,8 +32,19 @@
     "express",
     "middleware",
     "debugging",
-    "testing"
+    "testing",
+    "mock",
+    "traffic",
+    "http",
+    "request",
+    "response"
   ],
+  "author": "",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "homepage": "",
   "license": "MIT",
   "engines": {
     "node": ">=18.0.0"

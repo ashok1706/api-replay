@@ -3,6 +3,9 @@ import { sanitizeHeaders, sanitizeBody } from '../core/sanitizer.js';
 import { saveRecording, setRecordingsDir } from '../core/storage.js';
 
 function tryParse(body) {
+  if (Buffer.isBuffer(body)) {
+    body = body.toString('utf-8');
+  }
   if (typeof body === 'string') {
     try {
       return JSON.parse(body);
@@ -19,6 +22,7 @@ export function apiReplay(options = {}) {
   }
 
   const ignoreRoutes = options.ignore || [];
+  const onError = options.onError || (() => {});
 
   return function recorder(req, res, next) {
     // Skip ignored routes
@@ -30,6 +34,7 @@ export function apiReplay(options = {}) {
 
     const start = Date.now();
     const id = generateId();
+    let recorded = false;
 
     const requestData = {
       id,
@@ -41,9 +46,10 @@ export function apiReplay(options = {}) {
       timestamp: new Date().toISOString()
     };
 
-    // Hook res.send
-    const originalSend = res.send;
-    res.send = function (body) {
+    function record(body) {
+      if (recorded) return; // prevent double-recording
+      recorded = true;
+
       const duration = Date.now() - start;
 
       const recording = {
@@ -55,36 +61,31 @@ export function apiReplay(options = {}) {
         }
       };
 
-      try {
-        saveRecording(recording);
-      } catch {
-        // Don't break the response if storage fails
-      }
+      // Async save — never blocks the response
+      saveRecording(recording).catch(err => {
+        onError(err, recording);
+      });
+    }
 
+    // Hook res.send
+    const originalSend = res.send;
+    res.send = function (body) {
+      record(body);
       return originalSend.call(this, body);
     };
 
     // Hook res.json
     const originalJson = res.json;
     res.json = function (body) {
-      const duration = Date.now() - start;
-
-      const recording = {
-        request: requestData,
-        response: {
-          status: res.statusCode,
-          body,
-          duration
-        }
-      };
-
-      try {
-        saveRecording(recording);
-      } catch {
-        // Don't break the response if storage fails
-      }
-
+      record(body);
       return originalJson.call(this, body);
+    };
+
+    // Hook res.end (catches responses that bypass send/json)
+    const originalEnd = res.end;
+    res.end = function (chunk, encoding) {
+      record(chunk || null);
+      return originalEnd.call(this, chunk, encoding);
     };
 
     next();

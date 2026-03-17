@@ -26,6 +26,7 @@ ${bold('Commands:')}
 
 ${bold('Replay Options:')}
   --base-url ${dim('<url>')}        Target base URL (e.g., http://localhost:3000)
+  --timeout  ${dim('<ms>')}         Request timeout in ms (default: 30000)
 
 ${bold('Examples:')}
   api-replay list
@@ -34,91 +35,100 @@ ${bold('Examples:')}
 `);
 }
 
-function parseFlags(args) {
+function parseFlags(flagArgs) {
   const flags = {};
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--base-url' && args[i + 1]) {
-      flags.baseUrl = args[++i];
+  for (let i = 0; i < flagArgs.length; i++) {
+    if (flagArgs[i] === '--base-url' && flagArgs[i + 1]) {
+      flags.baseUrl = flagArgs[++i];
+    } else if (flagArgs[i] === '--timeout' && flagArgs[i + 1]) {
+      flags.timeout = parseInt(flagArgs[++i], 10);
     }
   }
   return flags;
 }
 
+async function cmdList() {
+  const recordings = listRecordings();
+  if (recordings.length === 0) {
+    console.log(dim('No recordings found.'));
+    return;
+  }
+  console.log(bold(`${recordings.length} recording(s):\n`));
+  for (const rec of recordings) {
+    const method = rec.method.padEnd(7);
+    console.log(`  ${cyan(rec.id)}  ${method} ${rec.url}  ${dim(`[${rec.status}]`)}  ${dim(rec.timestamp)}`);
+  }
+  console.log('');
+}
+
+function cmdShow(id) {
+  if (!id) {
+    console.error(red('Error: Please provide a recording ID'));
+    console.error(dim('Usage: api-replay show <id>'));
+    process.exit(1);
+  }
+  const recording = loadRecording(id);
+  console.log(JSON.stringify(recording, null, 2));
+}
+
+async function cmdReplay(id, flagArgs) {
+  if (!id) {
+    console.error(red('Error: Please provide a recording ID'));
+    console.error(dim('Usage: api-replay replay <id> --base-url <url>'));
+    process.exit(1);
+  }
+
+  const flags = parseFlags(flagArgs);
+
+  if (!flags.baseUrl) {
+    console.error(red('Error: --base-url is required for replay'));
+    console.error(dim('Usage: api-replay replay <id> --base-url http://localhost:3000'));
+    process.exit(1);
+  }
+
+  console.log(dim(`Replaying ${id} → ${flags.baseUrl}...`));
+  console.log('');
+
+  const result = await replay(id, {
+    baseUrl: flags.baseUrl,
+    timeout: flags.timeout
+  });
+
+  const diffResult = diff(result.original, {
+    status: result.status,
+    body: result.body,
+    duration: result.duration
+  });
+
+  console.log(formatDiff(diffResult));
+}
+
 async function run() {
-  if (!command || command === '--help' || command === '-h') {
-    showHelp();
-    return;
+  try {
+    if (!command || command === '--help' || command === '-h') {
+      showHelp();
+      return;
+    }
+
+    switch (command) {
+      case 'list':
+        await cmdList();
+        break;
+      case 'show':
+        cmdShow(args[1]);
+        break;
+      case 'replay':
+        await cmdReplay(args[1], args.slice(2));
+        break;
+      default:
+        console.error(red(`Unknown command: ${command}`));
+        showHelp();
+        process.exit(1);
+    }
+  } catch (err) {
+    console.error(red(`Error: ${err.message}`));
+    process.exit(1);
   }
-
-  if (command === 'list') {
-    try {
-      const recordings = listRecordings();
-      if (recordings.length === 0) {
-        console.log(dim('No recordings found.'));
-        return;
-      }
-      console.log(bold(`${recordings.length} recording(s):\n`));
-      for (const rec of recordings) {
-        const method = rec.method.padEnd(6);
-        console.log(`  ${cyan(rec.id)}  ${method} ${rec.url}  ${dim(`[${rec.status}]`)}  ${dim(rec.timestamp)}`);
-      }
-      console.log('');
-    } catch (err) {
-      console.error(red(`Error: ${err.message}`));
-      process.exit(1);
-    }
-    return;
-  }
-
-  if (command === 'show') {
-    const id = args[1];
-    if (!id) {
-      console.error(red('Error: Please provide a recording ID'));
-      console.error(dim('Usage: api-replay show <id>'));
-      process.exit(1);
-    }
-    try {
-      const recording = loadRecording(id);
-      console.log(JSON.stringify(recording, null, 2));
-    } catch (err) {
-      console.error(red(`Error: ${err.message}`));
-      process.exit(1);
-    }
-    return;
-  }
-
-  if (command === 'replay') {
-    const id = args[1];
-    if (!id) {
-      console.error(red('Error: Please provide a recording ID'));
-      console.error(dim('Usage: api-replay replay <id> --base-url <url>'));
-      process.exit(1);
-    }
-
-    const flags = parseFlags(args.slice(2));
-
-    try {
-      console.log(dim(`Replaying ${id}...`));
-      console.log('');
-
-      const result = await replay(id, { baseUrl: flags.baseUrl });
-      const diffResult = diff(result.original, {
-        status: result.status,
-        body: result.body,
-        duration: result.duration
-      });
-
-      console.log(formatDiff(diffResult));
-    } catch (err) {
-      console.error(red(`Error: ${err.message}`));
-      process.exit(1);
-    }
-    return;
-  }
-
-  console.error(red(`Unknown command: ${command}`));
-  showHelp();
-  process.exit(1);
 }
 
 run();
