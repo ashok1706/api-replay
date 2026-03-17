@@ -1,5 +1,5 @@
 {
-  "name": "api-replay",
+  "name": "api-traffic-replay",
   "version": "1.0.0",
   "description": "Record real API traffic, replay it anywhere, and instantly spot what changed",
   "type": "module",
@@ -18,7 +18,7 @@
     "LICENSE"
   ],
   "bin": {
-    "api-replay": "./src/cli/index.js"
+    "api-traffic-replay": "./src/cli/index.js"
   },
   "scripts": {
     "test": "vitest run",
